@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CivicPulse helps communities report and track local problems.">
+  <title>CivicPulse | Your Community, Your Voice</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+  <link rel="stylesheet" href="style.css">
+  
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  defer
+></script>
+
+<!-- Supabase database connection -->
+<script
+  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  defer
+></script>
+
+<!-- CivicPulse application code -->
+<script src="script.js" defer></script>
+
+</head>
+<body>
+  
+<header class="topbar">
+  <a href="#" class="brand">
+    <span class="brand-icon">C</span>
+    CivicPulse
+  </a>
+
+  <nav>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#reports">Reports</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#community-map">Community Map</a>
+  </nav>
+
+  <div class="account-actions">
+    <button class="secondary-btn" id="loginBtn" type="button">
+      Log in
+    </button>
+
+    <button class="primary-btn" id="signupBtn" type="button">
+      Sign up
+    </button>
+
+    <button class="primary-btn" id="openReport" type="button">
+      + Report an issue
+    </button>
+  </div>
+</header>
+
+
+  <main class="container">
+    <section class="hero" id="dashboard">
+      <div>
+        <span class="eyebrow">COMMUNITY INTELLIGENCE PLATFORM</span>
+        <h1>Your community.<br><span>Your voice. Measurable change.</span></h1>
+        <p>
+          Report local problems, help your community set priorities,
+          and follow every issue from report to resolution.
+        </p>
+        <button class="primary-btn" id="heroReport">Report a problem →</button>
+      </div>
+
+      <div class="hero-art" aria-label="Community improvement illustration">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="art-center">📍</div>
+        <span class="float-card float-one">💡 Streetlights</span>
+        <span class="float-card float-two">🌧️ Flooding</span>
+        <span class="float-card float-three">🛣️ Roads</span>
+      </div>
+    </section>
+
+
+<section class="community-context" aria-label="CivicPulse community focus">
+  <div class="community-context-icon">📍</div>
+
+  <div class="community-context-copy">
+    <p class="community-eyebrow">OUR COMMUNITY FOCUS</p>
+    <h2>Ona Ara, Oyo State</h2>
+    <p>
+      Tracking community issues, amplifying citizens' voices,
+      and making local problems harder to ignore.
+    </p>
+  </div>
+
+  <div class="community-focus-tag">
+    <span class="live-dot"></span>
+    Community dashboard
+  </div>
+</section>
+
+
+    <section class="stats-grid" aria-label="Report statistics">
+      <article class="stat-card">
+        <span class="stat-icon purple">▤</span>
+        <p>Total reports</p>
+        <h2 id="totalReports">6</h2>
+        <small>Community submissions</small>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-icon orange">◷</span>
+        <p>Pending issues</p>
+        <h2 id="pendingReports">3</h2>
+        <small>Awaiting resolution</small>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-icon green">✓</span>
+        <p>Resolved issues</p>
+        <h2 id="resolvedReports">2</h2>
+        <small>Marked as resolved</small>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-icon blue">↗</span>
+        <p>High priority</p>
+        <h2 id="highPriority">2</h2>
+        <small>Require close attention</small>
+      </article>
+    </section>
+
+    <section class="reports-section" id="reports">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">WHAT NEEDS ATTENTION?</span>
+          <h2>Community reports</h2>
+          <p>Explore reported issues and their current status.</p>
+        </div>
+        <button class="outline-btn" id="showAll">View all reports →</button>
+      </div>
+
+      <div class="filters">
+        <input type="search" id="searchInput"
+          placeholder="Search issues or locations..."
+          aria-label="Search reports">
+
+        <select id="categoryFilter" aria-label="Filter by category">
+          <option value="all">All categories</option>
+          <option value="Roads">Roads</option>
+          <option value="Flooding">Flooding</option>
+          <option value="Waste">Waste</option>
+          <option value="Streetlights">Streetlights</option>
+          <option value="Drainage">Drainage</option>
+          <option value="Water supply">Water supply</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="all">All statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+
+      
+<div class="report-list" id="reportList"></div>
+
+<!-- Report Details Dialog -->
+<dialog id="detailsDialog" class="report-dialog">
+  <div class="dialog-heading">
+    <div>
+      <span class="eyebrow">CIVICPULSE TRACKING</span>
+      <h2 id="detailTitle">Report details</h2>
+    </div>
+    <button type="button" id="closeDetails" class="close-btn"
+      aria-label="Close report details">×</button>
+  </div>
+
+  <div id="detailContent"></div>
+
+  <div class="tracking-actions">
+    <label for="detailStatus">Update demo status</label>
+    <select id="detailStatus">
+      <option value="Pending">Pending</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Resolved">Resolved</option>
+    </select>
+    <button type="button" id="saveStatus" class="primary-btn submit-btn">
+      Save status
+    </button>
+    <p class="form-note">
+      Demo updates are temporary and are not sent to an authority.
+    </p>
+  </div>
+</dialog>
+
+<div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <p class="demo-note">
+        Demo data for illustration only. These are not verified live community reports.
+      </p>
+    </section>
+
+
+<!-- ONA ARA COMMUNITY MAP -->
+<section class="map-section" id="community-map">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">EXPLORE YOUR LOCAL GOVERNMENT</span>
+      <h2>Ona Ara Community Map</h2>
+      <p>Explore reported community issues by location and category.</p>
+    </div>
+    <span class="map-location-badge">📍 Oyo State, Nigeria</span>
+  </div>
+
+  <div class="map-layout">
+    <div class="map-main">
+      <div id="communityMap" aria-label="Interactive map of Ona Ara"></div>
+      <p class="map-caption">
+        Demo issue locations are illustrative and may not represent
+        verified incidents or exact street locations.
+      </p>
+    </div>
+
+    <aside class="map-sidebar">
+      <h3>Map filters</h3>
+      <label for="mapCategory">Issue category</label>
+      <select id="mapCategory">
+        <option value="all">All categories</option>
+        <option value="Roads">Roads</option>
+        <option value="Flooding">Flooding</option>
+        <option value="Waste">Waste</option>
+        <option value="Streetlights">Streetlights</option>
+        <option value="Drainage">Drainage</option>
+        <option value="Water supply">Water supply</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <div class="map-legend">
+        <h3>Issue priority</h3>
+        <p><span class="legend-dot high-dot"></span> High pressure (70–100)</p>
+        <p><span class="legend-dot medium-dot"></span> Medium pressure (40–69)</p>
+        <p><span class="legend-dot low-dot"></span> Low pressure (0–39)</p>
+      </div>
+
+      <div class="map-result-count">
+        <strong id="mapReportCount">0</strong>
+        <span>mapped demo reports</span>
+      </div>
+
+      <p class="map-help">
+        Select a marker to view its report ID, category, status and
+        illustrative Pressure Score.
+      </p>
+    </aside>
+  </div>
+</section>
+
+
+    <section class="how-section" id="how-it-works">
+      <span class="eyebrow">SIMPLE. TRANSPARENT. COMMUNITY-DRIVEN.</span>
+      <h2>From a problem to a plan.</h2>
+
+      <div class="steps-grid">
+        <article class="step-card">
+          <span>01</span>
+          <h3>Report it</h3>
+          <p>Describe a problem and identify where it is happening.</p>
+        </article>
+        <article class="step-card">
+          <span>02</span>
+          <h3>Prioritize it</h3>
+          <p>Compare severity, community support and time outstanding.</p>
+        </article>
+        <article class="step-card">
+          <span>03</span>
+          <h3>Track progress</h3>
+          <p>Follow updates as an issue moves toward resolution.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="reportDialog" class="report-dialog">
+    <form id="reportForm">
+      <div class="dialog-heading">
+        <div>
+          <span class="eyebrow">MAKE YOUR VOICE COUNT</span>
+          <h2>Report a community issue</h2>
+        </div>
+        <button type="button" id="closeDialog" class="close-btn"
+          aria-label="Close form">×</button>
+      </div>
+
+      <label for="issueTitle">Issue title</label>
+      <input id="issueTitle" name="title" required
+        maxlength="100" placeholder="e.g. Large pothole on the main road">
+
+      <label for="issueCategory">Category</label>
+      <select id="issueCategory" name="category" required>
+        <option value="">Choose a category</option>
+        <option>Roads</option>
+        <option>Flooding</option>
+        <option>Waste</option>
+        <option>Streetlights</option>
+        <option>Drainage</option>
+        <option>Water supply</option>
+        <option>Other</option>
+      </select>
+
+
+<label for="issueSeverity">Severity</label>
+<select id="issueSeverity" name="severity" required>
+  <option value="1">1 — Minor</option>
+  <option value="2">2 — Low</option>
+  <option value="3" selected>3 — Moderate</option>
+  <option value="4">4 — Serious</option>
+  <option value="5">5 — Critical</option>
+</select>
+
+<label for="affectedPeople">Estimated people affected</label>
+<select id="affectedPeople" name="affectedPeople" required>
+  <option value="10">Up to 10 people</option>
+  <option value="50" selected>Up to 50 people</option>
+  <option value="100">Up to 100 people</option>
+  <option value="250">Up to 250 people</option>
+  <option value="500">500 or more people</option>
+</select>
+
+
+      <label for="issueLocation">Location</label>
+      <input id="issueLocation" name="location" required
+        maxlength="150" placeholder="Street, area or community">
+
+        <label for="issueCommunity">Select community (approximate location)</label>
+<select id="issueCommunity" name="community" required>
+  <option value="">Choose a community</option>
+  <option value="amuloko">Amuloko</option>
+  <option value="akanran">Akanran</option>
+  <option value="ariyo">Ariyo</option>
+  <option value="oke-eleshin">Oke-Eleshin</option>
+</select>
+<p class="form-note">
+  The selected community provides an approximate map location,
+  not the exact location of the incident.
+</p>
+
+      <label for="issueDescription">Description</label>
+      <textarea id="issueDescription" name="description" required
+        maxlength="1000" rows="4"
+        placeholder="Explain the problem and who it affects..."></textarea>
+
+      <button class="primary-btn submit-btn" type="submit">Submit report</button>
+      <p class="form-note">
+        This starter version keeps submissions in this browser session only.
+        Reports are not yet sent to a server.
+      </p>
+    </form>
+  </dialog>
+
+  <footer>
+    <a href="#" class="brand"><span class="brand-icon">C</span> CivicPulse</a>
+    <p>Building better communities, one report at a time.</p>
+    <small>Community demo · Not an official government service</small>
+  </footer>
+</body>
+
+
+<!-- CivicPulse Account Dialog -->
+<dialog id="accountDialog" class="report-dialog">
+  <div class="dialog-header">
+    <div>
+      <h2 id="accountTitle">Welcome back</h2>
+      <p id="accountSubtitle">Log in to your CivicPulse account.</p>
+    </div>
+
+    <button type="button" id="closeAccountDialog"
+      class="close-btn" aria-label="Close dialog">
+      &times;
+    </button>
+  </div>
+
+  <form id="accountForm">
+    <label for="accountEmail">Email address</label>
+    <input
+      type="email"
+      id="accountEmail"
+      name="email"
+      placeholder="you@example.com"
+      autocomplete="email"
+      required
+    >
+
+    <label for="accountPassword">Password</label>
+    <input
+      type="password"
+      id="accountPassword"
+      name="password"
+      placeholder="Enter your password"
+      autocomplete="current-password"
+      minlength="6"
+      required
+    >
+
+    <button type="submit" class="primary-btn" id="accountSubmit">
+      Log in
+    </button>
+
+    <p id="accountMessage" role="status" aria-live="polite"></p>
+
+    <p class="account-switch">
+      <span id="accountSwitchText">Don't have an account?</span>
+      <button type="button" id="switchAccountMode" class="text-btn">
+        Sign up
+      </button>
+    </p>
+  </form>
+</dialog>
+<!-- End CivicPulse Account Dialog -->
+
+</html>
